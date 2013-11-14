@@ -124,10 +124,25 @@ public:
     if (x >= 0 && x < strings.size()) 
       strings[x].setColor(y, c);
   }
+
+  void drawSnow(CvScalar c)
+  {
+    for(int i=0; i<20; i++)
+    {
+      int x = itsRng.uniform(0,11);
+      int y = itsRng.uniform(0,50);
+      setPixel(x, y, c);
+    }
+    
+
+  }
+
     
 
 private:
 
+ 
+  cv::RNG itsRng;
   std::vector<PixelString> strings;
 
 };
@@ -164,7 +179,6 @@ int main(int argc, char *argv[])
   
     if (key != -1)
     {
-      megaTree.setColor(CV_RGB(0,0,255));
       switch (key)
       {
         case 49:
@@ -177,8 +191,10 @@ int main(int argc, char *argv[])
           break;
       }
       printf("Offset %i\n", offset);
-      //megaTree.setPixel(0, offset, CV_RGB(255,0,255));
+      megaTree.setColor(CV_RGB(0,0,255));
       megaTree.setImage(sprite, 0, offset);
+      //megaTree.setPixel(0, 0, CV_RGB(255,255,255));
+      megaTree.drawSnow(CV_RGB(255,255,255));
     }
 
   }
