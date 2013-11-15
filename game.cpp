@@ -160,6 +160,7 @@ int main(int argc, char *argv[])
   cvMoveWindow("Test", 0, 0);
 
   cv::Mat sprite = cv::imread(argv[2], -1); //Load RGBA png image
+  cv::Mat background = cv::imread("sprites/background.png", -1); //Load RGBA png image
 
   megaTree.setColor(CV_RGB(0,0,255));
 
@@ -191,7 +192,7 @@ int main(int argc, char *argv[])
           break;
       }
       printf("Offset %i\n", offset);
-      megaTree.setColor(CV_RGB(0,0,255));
+      megaTree.setImage(background);
       megaTree.setImage(sprite, offset, 0);
       //megaTree.setPixel(0, 0, CV_RGB(255,255,255));
       megaTree.drawSnow(CV_RGB(255,255,255));
