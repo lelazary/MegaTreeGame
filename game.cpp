@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
 
   megaTree.setColor(CV_RGB(0,0,255));
 
-  int offset = 0;
+  int offset = 12;
   
   while(1)
   {
@@ -182,9 +182,9 @@ int main(int argc, char *argv[])
       switch (key)
       {
         case 49:
-          offset++;
-          if (offset > 50)
-            offset = 0;
+          offset--;
+          if (offset < -24)
+            offset = 12;
         
           break;
         case 50:
@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
       }
       printf("Offset %i\n", offset);
       megaTree.setColor(CV_RGB(0,0,255));
-      megaTree.setImage(sprite, 0, offset);
+      megaTree.setImage(sprite, offset, 0);
       //megaTree.setPixel(0, 0, CV_RGB(255,255,255));
       megaTree.drawSnow(CV_RGB(255,255,255));
     }
