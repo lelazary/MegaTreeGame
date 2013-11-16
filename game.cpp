@@ -133,23 +133,60 @@ public:
       int y = itsRng.uniform(0,50);
       setPixel(x, y, c);
     }
-    
-
   }
-
-    
-
 private:
-
- 
   cv::RNG itsRng;
   std::vector<PixelString> strings;
-
 };
+
+
+class Object
+{
+public:
+
+	Object(const char* filename, MegaTree& mt) :
+		itsMegaTree(mt)
+	{
+		itsSprite = cv::imread(filename, -1); //Load RGBA png image
+		posX  = 0;
+		posY = 0;
+	}
+
+	void draw()
+	{
+		itsMegaTree.setImage(itsSprite, posX, posY);
+	}
+	
+	void setPos(int x, int y) 
+	{
+		posX = x;
+		posY = y;
+	}
+	
+	void move(double x = 1, double y = 0)
+	{
+		posX -= x;
+		if (posX < -24)
+			posX = 12;
+
+		posY += y;
+	}
+
+	double getPosX(){ return posX; }
+	double getPosY(){ return posY; }
+
+private:
+	MegaTree&  itsMegaTree;
+  cv::Mat itsSprite;
+	double posX;
+	double posY;
+};
+
 
 int main(int argc, char *argv[])
 {
   char* filename = argv[1]; 
+  cv::RNG rng;
 
   MegaTree megaTree(cvPoint(555,355), cvPoint(0,295), 12);
   IplImage *image;
@@ -159,13 +196,29 @@ int main(int argc, char *argv[])
   cvNamedWindow("Test", 1);
   cvMoveWindow("Test", 0, 0);
 
-  cv::Mat sprite = cv::imread(argv[2], -1); //Load RGBA png image
+	Object santaSlay("sprites/santaSlay.png", megaTree);
+
+	std::vector<Object*> presents;
+	presents.push_back(new Object("sprites/present1.png", megaTree));
+
   cv::Mat background = cv::imread("sprites/background.png", -1); //Load RGBA png image
+	
+	std::vector<Object*> objects;
+	objects.push_back(new Object("sprites/house1.png", megaTree));
+	objects.push_back(new Object("sprites/house2.png", megaTree));
+	objects.push_back(new Object("sprites/snowman.png", megaTree));
+	objects.push_back(new Object("sprites/treeSmall.png", megaTree));
+	objects.push_back(new Object("sprites/treeSmall2.png", megaTree));
 
-  megaTree.setColor(CV_RGB(0,0,255));
 
-  int offset = 12;
-  
+  int currentObject = 0;
+	int y = rng.uniform(20,35);
+	objects[currentObject]->setPos(12, y);
+	
+	Object* present = NULL;
+	double presentSpeed = 2;
+	double objectSpeed = 0.7;
+	double santaSpeed = 0.2;
   while(1)
   {
 
@@ -183,20 +236,44 @@ int main(int argc, char *argv[])
       switch (key)
       {
         case 49:
-          offset--;
-          if (offset < -24)
-            offset = 12;
+					if (present == NULL)
+					{
+						if (santaSlay.getPosX() < 5 && santaSlay.getPosX() > -15)
+						{ 
+							present = presents[0];
+							present->setPos(3, 5);
+						}
+					}
+						
         
           break;
         case 50:
           break;
       }
-      printf("Offset %i\n", offset);
-      megaTree.setImage(background);
-      megaTree.setImage(sprite, offset, 0);
-      //megaTree.setPixel(0, 0, CV_RGB(255,255,255));
-      megaTree.drawSnow(CV_RGB(255,255,255));
-    }
+		}
+
+		megaTree.setImage(background);
+		santaSlay.move(santaSpeed, 0);
+		santaSlay.draw();
+
+		if (present != NULL)
+		{
+			present->move(0, presentSpeed);
+			present->draw();
+			if (present->getPosY() > 39)
+				present = NULL;
+		}
+
+		objects[currentObject]->move(objectSpeed, 0);
+		objects[currentObject]->draw();
+		if (objects[currentObject]->getPosX() < -23)
+		{
+			currentObject = rng.uniform(0,objects.size()); //Check if inclusive
+			printf("Object %i\n", currentObject);
+			int y = rng.uniform(20,35);
+			objects[currentObject]->setPos(12, y);
+		}
+		megaTree.drawSnow(CV_RGB(255,255,255));
 
   }
 
