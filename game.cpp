@@ -135,8 +135,9 @@ public:
   {
     for(int i=0; i<strings.size(); i++)
 		{
+			if (img)
+				strings[i].draw(img);
 			int id = stringMaps[i];
-      strings[i].draw(img);
 			char buffer[1+1+(50*3)];
 			buffer[0] = id;
 			buffer[1] = 50;
@@ -263,12 +264,15 @@ int main(int argc, char *argv[])
   tcsetattr(fd,TCSANOW,&newtio);
 
   MegaTree megaTree(cvPoint(555,355), cvPoint(0,295), 12);
-  IplImage *image;
-  if( (image = cvLoadImage( filename, 1)) == 0 )
-    return -1;
+  IplImage *image = NULL;
+	if (filename)
+		image = cvLoadImage( filename, 1);
 
-  cvNamedWindow("Test", 1);
-  cvMoveWindow("Test", 0, 0);
+	if (image)
+	{
+		cvNamedWindow("Test", 1);
+		cvMoveWindow("Test", 0, 0);
+	}
 
 	Object santaSlay("sprites/santaSlay.png", megaTree);
 	Object santa("sprites/santa.png", megaTree);
@@ -299,15 +303,22 @@ int main(int argc, char *argv[])
 	int drawBit = 0;
   while(1)
   {
-
-    IplImage *tmpImg = cvCreateImage( cvSize(image->width, image->height), image->depth, image->nChannels);
-    cvCopy(image, tmpImg, NULL);
+		IplImage *tmpImg  = NULL;
+		if (image)
+		{
+			tmpImg = cvCreateImage( cvSize(image->width, image->height), image->depth, image->nChannels);
+			cvCopy(image, tmpImg, NULL);
+		}
     //Draw the objects
     megaTree.draw(tmpImg);
 
-    cvShowImage("Test", tmpImg);
-    int key = cvWaitKey(10);
-    cvReleaseImage(&tmpImg);
+		int key = -1;
+		if (image)
+		{
+			cvShowImage("Test", tmpImg);
+			key = cvWaitKey(10);
+			cvReleaseImage(&tmpImg);
+		}
   
     if (key != -1)
     {
@@ -374,8 +385,11 @@ int main(int argc, char *argv[])
 
   close(fd);
 
-  cvReleaseImage(&image);
-  cvDestroyWindow("Test");
+	if (image)
+	{
+		cvReleaseImage(&image);
+		cvDestroyWindow("Test");
+	}
 
   return 0;
 }
