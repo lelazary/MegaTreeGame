@@ -3,10 +3,12 @@
 #ALSALIB = -lasound
 CC = g++ $(CFLAGS) $(VFLAGS) $(PMFLAGS) -g
 
-all: game
+all: game serialClient
 
 game: game.cpp
 	$(CC) game.cpp -o game -lopencv_core -lopencv_highgui
+serialClient: serialClient.cpp
+	$(CC) serialClient.cpp -o serialClient 
 
 clean:
 	rm -f game game.o

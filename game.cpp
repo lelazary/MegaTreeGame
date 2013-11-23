@@ -3,6 +3,19 @@
 #include "string.h"
 #include "assert.h"
 
+#include "stdlib.h"
+#include "stdio.h"
+#include "string.h"
+#include "assert.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <termios.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+
 #ifdef _CH_
 #pragma package <opencv>
 #endif
@@ -14,6 +27,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+/* baudrate settings are defined in <asm/termbits.h>, which is
+included by <termios.h> */
+#define BAUDRATE B115200
+/* change this definition for the correct port */
+#define MODEMDEVICE "/dev/ttyUSB1"
+
+
+int fd;
+
+int stringMaps[12] = 
+{ 6, 2, 5, 
+13, 3, 4, 
+7, 8, 9, 10, 11, 12 };
 
 struct PixelString
 {
@@ -74,6 +100,15 @@ struct PixelString
       colors[i] = c;
   }
 
+  void getBuffer(char* buffer) {
+    for(int i=0; i<50; i++)
+		{
+			buffer[2+((i)*3)+0] = colors[(50-i)*3+0].val[0];
+			buffer[2+((i)*3)+1] = colors[(50-i)*3+1].val[2];
+			buffer[2+((i)*3)+2] = colors[(50-i)*3+2].val[1];
+		}
+  }
+
   void draw(IplImage* img)
   {
     for(int i=0; i<points.size(); i++)
@@ -81,6 +116,7 @@ struct PixelString
       //cvDrawCircle(img, points[i], 1, colors[i]);
       cvSet2D(img, points[i].y,points[i].x, colors[i]);
     }
+		
   }
 };
 
@@ -98,7 +134,17 @@ public:
   void draw(IplImage* img)
   {
     for(int i=0; i<strings.size(); i++)
+		{
+			int id = stringMaps[i];
       strings[i].draw(img);
+			char buffer[1+1+(50*3)];
+			buffer[0] = id;
+			buffer[1] = 50;
+			strings[i].getBuffer(buffer);
+			write(fd, buffer, 1+1+(50*3));
+			usleep(25000);
+
+		}
   }
 
   void setImage(cv::Mat& img, int offsetX = 0, int offsetY=0)
@@ -117,6 +163,11 @@ public:
   {
     for(int i=0; i<strings.size(); i++)
       strings[i].setColor(c);
+  }
+
+  void setColor(int i, CvScalar c)
+  {
+					strings[i].setColor(c);
   }
 
   void setPixel(int x, int y, CvScalar c)
@@ -188,6 +239,29 @@ int main(int argc, char *argv[])
   char* filename = argv[1]; 
   cv::RNG rng;
 
+  //Setup the serial
+  fd = open(MODEMDEVICE, O_RDWR | O_NOCTTY );
+  if (fd <0) {
+    printf("Error opening device\n");
+    perror(MODEMDEVICE);
+    return -1;
+  }
+
+  struct termios oldtio,newtio;
+  tcgetattr(fd,&oldtio); /* save current serial port settings */
+  bzero(&newtio, sizeof(newtio)); /* clear struct for new port settings */
+
+  newtio.c_cflag = BAUDRATE; // | CRTSCTS | CS8 | CLOCAL | CREAD;
+  newtio.c_iflag = 1; //IGNPAR; 
+  newtio.c_oflag = 0; //Raw Output
+  newtio.c_lflag = 0;
+  
+  /*
+    now clean the modem line and activate the settings for the port
+  */
+  tcflush(fd, TCIFLUSH);
+  tcsetattr(fd,TCSANOW,&newtio);
+
   MegaTree megaTree(cvPoint(555,355), cvPoint(0,295), 12);
   IplImage *image;
   if( (image = cvLoadImage( filename, 1)) == 0 )
@@ -197,6 +271,8 @@ int main(int argc, char *argv[])
   cvMoveWindow("Test", 0, 0);
 
 	Object santaSlay("sprites/santaSlay.png", megaTree);
+	Object santa("sprites/santa.png", megaTree);
+	Object tree("sprites/tree.png", megaTree);
 
 	std::vector<Object*> presents;
 	presents.push_back(new Object("sprites/present1.png", megaTree));
@@ -216,9 +292,11 @@ int main(int argc, char *argv[])
 	objects[currentObject]->setPos(12, y);
 	
 	Object* present = NULL;
-	double presentSpeed = 2;
-	double objectSpeed = 0.7;
-	double santaSpeed = 0.2;
+	double presentSpeed = 1.5;
+	double objectSpeed = 0.2;
+	double santaSpeed = 0.1;
+	int idx = 0;
+	int drawBit = 0;
   while(1)
   {
 
@@ -253,31 +331,48 @@ int main(int argc, char *argv[])
 		}
 
 		megaTree.setImage(background);
-		santaSlay.move(santaSpeed, 0);
-		santaSlay.draw();
-
-		if (present != NULL)
+    idx++;
+	  if (idx > 10)
 		{
-			present->move(0, presentSpeed);
-			present->draw();
-			if (present->getPosY() > 39)
-				present = NULL;
+				idx = 0;
+				drawBit = !drawBit;
 		}
 
-		objects[currentObject]->move(objectSpeed, 0);
-		objects[currentObject]->draw();
-		if (objects[currentObject]->getPosX() < -23)
-		{
-			currentObject = rng.uniform(0,objects.size()); //Check if inclusive
-			printf("Object %i\n", currentObject);
-			int y = rng.uniform(20,35);
-			objects[currentObject]->setPos(12, y);
-		}
+		if (drawBit)
+				tree.draw();
+		else
+				santa.draw();
+			
+		//santaSlay.move(santaSpeed, 0);
+		//santaSlay.draw();
+
+		//if (present != NULL)
+		//{
+		//	present->move(0, presentSpeed);
+		//	present->draw();
+		//	if (present->getPosY() > 39)
+		//		present = NULL;
+		//}
+
+		//objects[currentObject]->move(objectSpeed, 0);
+		//objects[currentObject]->draw();
+		//if (objects[currentObject]->getPosX() < -23)
+		//{
+		//	currentObject = rng.uniform(0,objects.size()); //Check if inclusive
+		//	printf("Object %i\n", currentObject);
+		//	int y = rng.uniform(20,35);
+		//	objects[currentObject]->setPos(12, y);
+		//}
 		megaTree.drawSnow(CV_RGB(255,255,255));
 
   }
 
   /* close device (this not explicitly needed in most implementations) */
+
+  /* restore the old port settings */
+  tcsetattr(fd,TCSANOW,&oldtio);
+
+  close(fd);
 
   cvReleaseImage(&image);
   cvDestroyWindow("Test");
