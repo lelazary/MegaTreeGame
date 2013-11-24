@@ -12,60 +12,34 @@
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(50*2, PIN, NEO_GRB + NEO_KHZ800);
 uint32_t black = strip.Color(0,00,0);
 uint8_t *pixels = strip.getPixels();
+uint8_t header[2];
 
 void setup() {
   Serial.begin(115200);
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
-
-	pinMode(13, OUTPUT);
 }
 
 void loop() {
 
-	//digitalWrite(13, HIGH);   // turn the LED on (HIGH is the voltage level)
-	//delay(1000);               // wait for a second
-	if (Serial.available() > 0)
-	{
-    Serial.print("Aval ");
-    Serial.println(Serial.available());
-		int id = Serial.read();
-		uint16_t size = Serial.read()*3;
-		strip.setPin(id);
-		int count = Serial.readBytes((char*)pixels, size);
-		if (count == size)
-		{
-			strip.show();
-			Serial.print("OK ");
-			Serial.println(count);
-		}
-		//{
-		//	strip.show();
-		//	//digitalWrite(13, LOW);    // turn the LED off by making the voltage LOW
-		//	//delay(1000);
-		//}
-	}
-	//if (Serial.available() > 0)
-	//{
-	//	//int id = Serial.read();
-	//	//uint16_t size = Serial.read()*3;
-	//	strip.setPin(2);
-	//	//int count = Serial.readBytes((char*)pixels, size);
-  //  for(int i=0; i<50*3; i++)
-	//	{
-	//			pixels[i] = 0;
-	//	}
-	//		strip.show();
-	//		//digitalWrite(13, LOW);    // turn the LED off by making the voltage LOW
-	//		//delay(1000);
-	//}
-
+  //digitalWrite(13, HIGH);   // turn the LED on (HIGH is the voltage level)
+  //delay(1000);               // wait for a second
+  if (Serial.available() > 0)
+  {
+    int count = Serial.readBytes((char*)header, 2);
+    if (count != 2) return;
+    //Header contains the string id and the size of pixels to set
+    uint16_t size = header[1]*3; //RGB per pixel
+    strip.setPin(header[0]);
+    count = Serial.readBytes((char*)pixels, size);
+    if (count == size)
+    {
+      strip.show();
+      Serial.print("A");
+    } else {
+      Serial.print("N");
+    }
+  }
 }
 
-//void clear() {
-//  for(uint16_t i=0; i<strip.numPixels(); i++) {
-//      strip.setPixelColor(i, black);
-//  }
-//   strip.show();
-//}
 
