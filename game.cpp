@@ -134,20 +134,26 @@ class MegaTree
       {
         if (img)
           strings[i].draw(img);
-        int id = stringMaps[i];
-        char buffer[1+1+(50*3)];
-        buffer[0] = id;
-        buffer[1] = 50;
-        strings[i].getBuffer(buffer);
-        //printf("Sending %i\n", id);
-        write(fd, buffer, 1+1+(50*3));
-        struct timeval timeout = {10, 0}; //10 seconds
-        int ret = select(fd+1, &fds, NULL, NULL, &timeout);
-        ret = read(fd, buffer, 10);
-        //buffer[ret] = 0;
-        //printf("%s\n", buffer);
-        if (buffer[0] != 'A')
-          printf("Error while sending string data\n");
+    
+        if (fd != -1)
+        {
+          int id = stringMaps[i];
+          char buffer[1+1+(50*3)];
+          buffer[0] = id;
+          buffer[1] = 50;
+          strings[i].getBuffer(buffer);
+          //printf("Sending %i\n", id);
+          write(fd, buffer, 1+1+(50*3));
+          struct timeval timeout = {10, 0}; //10 seconds
+          int ret = select(fd+1, &fds, NULL, NULL, &timeout);
+          ret = read(fd, buffer, 10);
+          //buffer[ret] = 0;
+          //printf("%s\n", buffer);
+          if (buffer[0] != 'A')
+            printf("Error while sending string data\n");
+        } else {
+          usleep(20000);
+        }
       }
     }
 
@@ -184,7 +190,7 @@ class MegaTree
     {
       for(int i=0; i<20; i++)
       {
-        int x = itsRng.uniform(0,11);
+        int x = itsRng.uniform(0,12);
         int y = itsRng.uniform(0,50);
         setPixel(x, y, c);
       }
@@ -255,7 +261,7 @@ int main(int argc, char *argv[])
   if (fd <0) {
     printf("Error opening device %s\n", ttydev);
     perror(ttydev);
-    return -1;
+    fd = -1;
   }
   FD_ZERO(&fds);
   FD_SET(fd, &fds);
@@ -287,8 +293,6 @@ int main(int argc, char *argv[])
   }
 
   Object santaSlay("sprites/santaSlay.png", megaTree);
-  Object santa("sprites/santa.png", megaTree);
-  Object tree("sprites/tree.png", megaTree);
 
   std::vector<Object*> presents;
   presents.push_back(new Object("sprites/present1.png", megaTree));
@@ -296,16 +300,23 @@ int main(int argc, char *argv[])
   cv::Mat background = cv::imread("sprites/background.png", -1); //Load RGBA png image
 
   std::vector<Object*> objects;
-  objects.push_back(new Object("sprites/house1.png", megaTree));
-  objects.push_back(new Object("sprites/house2.png", megaTree));
+  //objects.push_back(new Object("sprites/house1.png", megaTree));
+  //objects.push_back(new Object("sprites/house2.png", megaTree));
+  //objects.push_back(new Object("sprites/snowman.png", megaTree));
+  //objects.push_back(new Object("sprites/treeSmall.png", megaTree));
+  //objects.push_back(new Object("sprites/treeSmall2.png", megaTree));
+
+  Object santa("sprites/santa.png", megaTree);
+  objects.push_back(new Object("sprites/santa.png", megaTree));
+  objects.push_back(new Object("sprites/santaFace.png", megaTree));
+  objects.push_back(new Object("sprites/tree.png", megaTree));
   objects.push_back(new Object("sprites/snowman.png", megaTree));
-  objects.push_back(new Object("sprites/treeSmall.png", megaTree));
-  objects.push_back(new Object("sprites/treeSmall2.png", megaTree));
+
 
 
   int currentObject = 0;
   int y = rng.uniform(20,35);
-  objects[currentObject]->setPos(12, y);
+  //objects[currentObject]->setPos(12, y);
 
   Object* present = NULL;
   double presentSpeed = 1.5;
@@ -362,13 +373,11 @@ int main(int argc, char *argv[])
     if (idx > 60)
     {
       idx = 0;
-      drawBit = !drawBit;
+      currentObject = rng.uniform(0,objects.size()); 
     }
+    objects[currentObject]->draw();
+    //santa.draw();
 
-    if (drawBit)
-      tree.draw();
-    else
-      santa.draw();
 
     //santaSlay.move(santaSpeed, 0);
     //santaSlay.draw();
