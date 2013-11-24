@@ -359,7 +359,7 @@ int main(int argc, char *argv[])
 
     megaTree.setImage(background);
     idx++;
-    if (idx > 20)
+    if (idx > 60)
     {
       idx = 0;
       drawBit = !drawBit;
