@@ -36,7 +36,7 @@
 int fd=-1;
 fd_set fds;
 
-int stringMaps[12] = { 6, 2, 5, 13, 3, 4, 7, 8, 9, 10, 11, 12 };
+int stringMaps[12] = { 11, 12,7,8,9,10, 4, 6, 13, 5, 2, 3};
 
 struct PixelString
 {
@@ -147,7 +147,7 @@ class MegaTree
           struct timeval timeout = {10, 0}; //10 seconds
           int ret = select(fd+1, &fds, NULL, NULL, &timeout);
           ret = read(fd, buffer, 10);
-          //buffer[ret] = 0;
+          buffer[ret] = 0;
           //printf("%s\n", buffer);
           if (buffer[0] != 'A')
             printf("Error while sending string data\n");
@@ -275,6 +275,7 @@ int main(int argc, char *argv[])
   newtio.c_oflag = 0; //Raw Output
   newtio.c_lflag = 0;
 
+  if (cfsetspeed(&newtio, 250000) < 0) printf("error in cfsetspeed\n");
   /*
      now clean the modem line and activate the settings for the port
    */
@@ -311,6 +312,7 @@ int main(int argc, char *argv[])
   objects.push_back(new Object("sprites/santaFace.png", megaTree));
   objects.push_back(new Object("sprites/tree.png", megaTree));
   objects.push_back(new Object("sprites/snowman.png", megaTree));
+  objects.push_back(new Object("sprites/grinch.png", megaTree));
 
 
 
@@ -368,6 +370,7 @@ int main(int argc, char *argv[])
       }
     }
 
+     //megaTree.setColor(atoi(argv[3]),CV_RGB(atoi(argv[4]), atoi(argv[5]), atoi(argv[6])));
     megaTree.setImage(background);
     idx++;
     if (idx > 60)
@@ -376,6 +379,7 @@ int main(int argc, char *argv[])
       currentObject = rng.uniform(0,objects.size()); 
     }
     objects[currentObject]->draw();
+
     //santa.draw();
 
 
@@ -399,14 +403,14 @@ int main(int argc, char *argv[])
     //	int y = rng.uniform(20,35);
     //	objects[currentObject]->setPos(12, y);
     //}
-    megaTree.drawSnow(CV_RGB(255,255,255));
+    //megaTree.drawSnow(CV_RGB(255,255,255));
 
 
     time(&end);
     frameCounter++;
     double sec = difftime(end, start);
     double fps = frameCounter/sec;
-    printf("FPS=%0.2f\n", fps);
+    //printf("FPS=%0.2f\n", fps);
   }
 
   /* close device (this not explicitly needed in most implementations) */
