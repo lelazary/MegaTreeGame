@@ -275,7 +275,6 @@ int main(int argc, char *argv[])
   newtio.c_oflag = 0; //Raw Output
   newtio.c_lflag = 0;
 
-  if (cfsetspeed(&newtio, 250000) < 0) printf("error in cfsetspeed\n");
   /*
      now clean the modem line and activate the settings for the port
    */
@@ -293,7 +292,15 @@ int main(int argc, char *argv[])
     cvMoveWindow("Test", 0, 0);
   }
 
-  Object santaSlay("sprites/santaSlay.png", megaTree);
+  Object santaSlay("sprites/grinchSlay.png", megaTree);
+
+  Object cannon1("sprites/cannon1.png", megaTree);
+  cannon1.setPos(0,38);
+
+  Object heart("sprites/heart.png", megaTree);
+
+  Object cannon2("sprites/cannon2.png", megaTree);
+  cannon2.setPos(0,38);
 
   std::vector<Object*> presents;
   presents.push_back(new Object("sprites/present1.png", megaTree));
@@ -301,29 +308,29 @@ int main(int argc, char *argv[])
   cv::Mat background = cv::imread("sprites/background.png", -1); //Load RGBA png image
 
   std::vector<Object*> objects;
-  //objects.push_back(new Object("sprites/house1.png", megaTree));
-  //objects.push_back(new Object("sprites/house2.png", megaTree));
-  //objects.push_back(new Object("sprites/snowman.png", megaTree));
-  //objects.push_back(new Object("sprites/treeSmall.png", megaTree));
-  //objects.push_back(new Object("sprites/treeSmall2.png", megaTree));
+  objects.push_back(new Object("sprites/house1.png", megaTree));
+  objects.push_back(new Object("sprites/house2.png", megaTree));
+  objects.push_back(new Object("sprites/snowman.png", megaTree));
+  objects.push_back(new Object("sprites/treeSmall.png", megaTree));
+  objects.push_back(new Object("sprites/treeSmall2.png", megaTree));
 
   Object santa("sprites/santa.png", megaTree);
-  objects.push_back(new Object("sprites/santa.png", megaTree));
-  objects.push_back(new Object("sprites/santaFace.png", megaTree));
-  objects.push_back(new Object("sprites/tree.png", megaTree));
-  objects.push_back(new Object("sprites/snowman.png", megaTree));
-  objects.push_back(new Object("sprites/grinch.png", megaTree));
+  //objects.push_back(new Object("sprites/santa.png", megaTree));
+  //objects.push_back(new Object("sprites/santaFace.png", megaTree));
+  //objects.push_back(new Object("sprites/tree.png", megaTree));
+  //objects.push_back(new Object("sprites/snowman.png", megaTree));
+  //objects.push_back(new Object("sprites/grinch.png", megaTree));
 
 
 
   int currentObject = 0;
   int y = rng.uniform(20,35);
-  //objects[currentObject]->setPos(12, y);
+  objects[currentObject]->setPos(12, y);
 
   Object* present = NULL;
   double presentSpeed = 1.5;
   double objectSpeed = 0.2;
-  double santaSpeed = 0.1;
+  double santaSpeed = 0.7;
   int idx = 0;
   int drawBit = 0;
 
@@ -331,6 +338,7 @@ int main(int argc, char *argv[])
   time_t start, end;
   int frameCounter = 0;
 
+  bool fireHeart = 0;
   time(&start);
   while(1)
   {
@@ -351,6 +359,7 @@ int main(int argc, char *argv[])
       cvReleaseImage(&tmpImg);
     }
 
+    megaTree.setImage(background);
     if (key != -1)
     {
       switch (key)
@@ -363,28 +372,43 @@ int main(int argc, char *argv[])
               present = presents[0];
               present->setPos(3, 5);
             }
+	
+	    
           }
           break;
         case 50:
           break;
       }
+      cannon2.draw();
+      fireHeart = 1;
+      heart.setPos(0,30);
+      
+    } else {
+	  cannon1.draw();
+
     }
 
      //megaTree.setColor(atoi(argv[3]),CV_RGB(atoi(argv[4]), atoi(argv[5]), atoi(argv[6])));
-    megaTree.setImage(background);
-    idx++;
-    if (idx > 60)
-    {
-      idx = 0;
-      currentObject = rng.uniform(0,objects.size()); 
-    }
-    objects[currentObject]->draw();
+    //idx++;
+    //if (idx > 60)
+    //{
+    //  idx = 0;
+    //  currentObject = rng.uniform(0,objects.size()); 
+    //}
+    //objects[currentObject]->draw();
 
     //santa.draw();
 
+    if (fireHeart)
+    {
+	heart.draw();
+	heart.move(0,-2);
+	if (heart.getPosY() < 10)
+	  fireHeart = 0;
+    }
 
-    //santaSlay.move(santaSpeed, 0);
-    //santaSlay.draw();
+    santaSlay.move(santaSpeed, 0);
+    santaSlay.draw();
 
     //if (present != NULL)
     //{
@@ -403,14 +427,15 @@ int main(int argc, char *argv[])
     //	int y = rng.uniform(20,35);
     //	objects[currentObject]->setPos(12, y);
     //}
-    //megaTree.drawSnow(CV_RGB(255,255,255));
+
+    megaTree.drawSnow(CV_RGB(255,255,255));
 
 
     time(&end);
     frameCounter++;
     double sec = difftime(end, start);
     double fps = frameCounter/sec;
-    //printf("FPS=%0.2f\n", fps);
+    printf("FPS=%0.2f\n", fps);
   }
 
   /* close device (this not explicitly needed in most implementations) */
