@@ -35,6 +35,7 @@
 
 int fd=-1;
 fd_set fds;
+cv::RNG rng;
 
 int stringMaps[12] = { 11, 12,7,8,9,10, 4, 6, 13, 5, 2, 3};
 
@@ -244,6 +245,36 @@ class Object
 };
 
 
+void drawMenora(MegaTree& tree, Object& base, int numCandels)
+{
+	base.setPos(0,30);
+	base.draw();
+
+  //Draw the samas
+	unsigned char flameR = rng.uniform(100,255);
+	unsigned char flameG = rng.uniform(50,150);
+	unsigned char flameB = rng.uniform(50,150);
+	unsigned char flameSize = rng.uniform(1,3);
+	for(int i=0; i<5; i++) //Candel base
+		tree.setPixel(10,25+i, CV_RGB(0, 0,255));
+	for(int i=0; i<flameSize; i++) //Candel flame
+		tree.setPixel(10,24-i, CV_RGB(flameR, flameG,0));
+
+  for(int c=0; c<numCandels; c++)
+	{
+		flameR = rng.uniform(100,255);
+		flameG = rng.uniform(50,150);
+		flameB = rng.uniform(50,150);
+		flameSize = rng.uniform(1,3);
+
+		for(int i=0; i<5; i++) //Candel base
+			tree.setPixel(c,28+i, CV_RGB(0, 0,255));
+		for(int i=0; i<flameSize; i++) //Candel flame
+			tree.setPixel(c,27-i, CV_RGB(flameR, flameG,0));
+	}
+}
+
+
 int main(int argc, char *argv[])
 {
   char* ttydev = NULL;
@@ -253,8 +284,6 @@ int main(int argc, char *argv[])
     ttydev = argv[1]; 
   if (argc > 1)
     filename = argv[2]; 
-
-  cv::RNG rng;
 
   //Setup the serial
   fd = open(ttydev, O_RDWR | O_NOCTTY );
@@ -308,24 +337,25 @@ int main(int argc, char *argv[])
   cv::Mat background = cv::imread("sprites/background.png", -1); //Load RGBA png image
 
   std::vector<Object*> objects;
-  objects.push_back(new Object("sprites/house1.png", megaTree));
-  objects.push_back(new Object("sprites/house2.png", megaTree));
-  objects.push_back(new Object("sprites/snowman.png", megaTree));
-  objects.push_back(new Object("sprites/treeSmall.png", megaTree));
-  objects.push_back(new Object("sprites/treeSmall2.png", megaTree));
+  //objects.push_back(new Object("sprites/house1.png", megaTree));
+  //objects.push_back(new Object("sprites/house2.png", megaTree));
+  //objects.push_back(new Object("sprites/snowman.png", megaTree));
+  //objects.push_back(new Object("sprites/treeSmall.png", megaTree));
+  //objects.push_back(new Object("sprites/treeSmall2.png", megaTree));
 
   Object santa("sprites/santa.png", megaTree);
-  //objects.push_back(new Object("sprites/santa.png", megaTree));
-  //objects.push_back(new Object("sprites/santaFace.png", megaTree));
-  //objects.push_back(new Object("sprites/tree.png", megaTree));
-  //objects.push_back(new Object("sprites/snowman.png", megaTree));
-  //objects.push_back(new Object("sprites/grinch.png", megaTree));
+  objects.push_back(new Object("sprites/santa.png", megaTree));
+  objects.push_back(new Object("sprites/santaFace.png", megaTree));
+  objects.push_back(new Object("sprites/tree.png", megaTree));
+  objects.push_back(new Object("sprites/snowman.png", megaTree));
+  objects.push_back(new Object("sprites/grinch.png", megaTree));
 
 
+  Object menora("sprites/menora.png", megaTree);
 
   int currentObject = 0;
   int y = rng.uniform(20,35);
-  objects[currentObject]->setPos(12, y);
+  //objects[currentObject]->setPos(12, y);
 
   Object* present = NULL;
   double presentSpeed = 1.5;
@@ -359,34 +389,40 @@ int main(int argc, char *argv[])
       cvReleaseImage(&tmpImg);
     }
 
-    megaTree.setImage(background);
-    if (key != -1)
-    {
-      switch (key)
-      {
-        case 49:
-          if (present == NULL)
-          {
-            if (santaSlay.getPosX() < 5 && santaSlay.getPosX() > -15)
-            { 
-              present = presents[0];
-              present->setPos(3, 5);
-            }
-	
-	    
-          }
-          break;
-        case 50:
-          break;
-      }
-      cannon2.draw();
-      fireHeart = 1;
-      heart.setPos(0,30);
-      
-    } else {
-	  cannon1.draw();
 
-    }
+    //megaTree.setImage(background);
+    megaTree.setColor(CV_RGB(0,0,0));
+    //if (key != -1)
+    //{
+    //  switch (key)
+    //  {
+    //    case 49:
+    //      if (present == NULL)
+    //      {
+    //        if (santaSlay.getPosX() < 5 && santaSlay.getPosX() > -15)
+    //        { 
+    //          present = presents[0];
+    //          present->setPos(3, 5);
+    //        }
+    //    
+    //        
+    //      }
+    //      break;
+    //    case 50:
+    //      break;
+    //  }
+    //  cannon2.draw();
+    //  fireHeart = 1;
+    //  heart.setPos(0,30);
+    //  
+    //} else {
+    //      cannon1.draw();
+
+    //}
+
+
+		drawMenora(megaTree, menora, 1);
+
 
      //megaTree.setColor(atoi(argv[3]),CV_RGB(atoi(argv[4]), atoi(argv[5]), atoi(argv[6])));
     //idx++;
@@ -399,16 +435,16 @@ int main(int argc, char *argv[])
 
     //santa.draw();
 
-    if (fireHeart)
-    {
-	heart.draw();
-	heart.move(0,-2);
-	if (heart.getPosY() < 10)
-	  fireHeart = 0;
-    }
+    //if (fireHeart)
+    //{
+    //    heart.draw();
+    //    heart.move(0,-2);
+    //    if (heart.getPosY() < 10)
+    //      fireHeart = 0;
+    //}
 
-    santaSlay.move(santaSpeed, 0);
-    santaSlay.draw();
+    //santaSlay.move(santaSpeed, 0);
+    //santaSlay.draw();
 
     //if (present != NULL)
     //{
@@ -428,7 +464,7 @@ int main(int argc, char *argv[])
     //	objects[currentObject]->setPos(12, y);
     //}
 
-    megaTree.drawSnow(CV_RGB(255,255,255));
+    //megaTree.drawSnow(CV_RGB(255,255,255));
 
 
     time(&end);
