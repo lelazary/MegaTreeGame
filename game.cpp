@@ -225,13 +225,17 @@ class Object
       posY = y;
     }
 
-    void move(double x = 1, double y = 0)
+    bool move(double x = 1, double y = 0, int limit1 = 12, int limit2 = -24)
     {
       posX -= x;
-      if (posX < -24)
-        posX = 12;
+      if (posX < limit2)
+			{
+        posX = limit1;
+				return true;
+			}
 
       posY += y;
+			return false;
     }
 
     double getPosX(){ return posX; }
@@ -322,6 +326,7 @@ int main(int argc, char *argv[])
   }
 
   Object santaSlay("sprites/grinchSlay.png", megaTree);
+  Object banner("sprites/happyhanukkah.png", megaTree);
 
   Object cannon1("sprites/cannon1.png", megaTree);
   cannon1.setPos(0,38);
@@ -359,7 +364,6 @@ int main(int argc, char *argv[])
   sevivon.push_back(new Object("sprites/Sevivon6.png", megaTree));
   sevivon.push_back(new Object("sprites/Sevivon7.png", megaTree));
   sevivon.push_back(new Object("sprites/Sevivon8.png", megaTree));
-  int sevivonIdx = 0;
 
   Object menora("sprites/menora.png", megaTree);
 
@@ -380,6 +384,10 @@ int main(int argc, char *argv[])
 
   bool fireHeart = 0;
   time(&start);
+
+	int sevivonIdx = 10;
+	int sevivonVal = rng.uniform(0,4);
+  int sevivonDisplayTime = 10;
   while(1)
   {
     IplImage *tmpImg  = NULL;
@@ -430,11 +438,28 @@ int main(int argc, char *argv[])
 
     //}
 
-
-		sevivon[7-sevivonIdx]->draw();
-		sevivonIdx = (sevivonIdx+1)%8;
-		drawMenora(megaTree, menora, 1);
-
+		if (sevivonDisplayTime > 0)
+		{
+			if (sevivonIdx <= 0)
+			{
+				sevivon[1+(sevivonVal*2)]->draw();
+				sevivonDisplayTime--;
+			} else {
+				//Spin sevivon
+				sevivon[7-(sevivonIdx%8)]->draw();
+				sevivonIdx--;
+			}
+		} else {
+			banner.draw();
+			if (banner.move(3,0, 0, -150))
+			{
+				sevivonIdx = 10+rng.uniform(0,5);
+				sevivonVal = rng.uniform(0,4);
+				sevivonDisplayTime = 10;
+			}
+		}
+	drawMenora(megaTree, menora, 1);
+        
 
      //megaTree.setColor(atoi(argv[3]),CV_RGB(atoi(argv[4]), atoi(argv[5]), atoi(argv[6])));
     //idx++;
