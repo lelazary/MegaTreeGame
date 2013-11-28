@@ -350,6 +350,16 @@ int main(int argc, char *argv[])
   objects.push_back(new Object("sprites/snowman.png", megaTree));
   objects.push_back(new Object("sprites/grinch.png", megaTree));
 
+  std::vector<Object*> sevivon;
+  sevivon.push_back(new Object("sprites/Sevivon1.png", megaTree));
+  sevivon.push_back(new Object("sprites/Sevivon2.png", megaTree));
+  sevivon.push_back(new Object("sprites/Sevivon3.png", megaTree));
+  sevivon.push_back(new Object("sprites/Sevivon4.png", megaTree));
+  sevivon.push_back(new Object("sprites/Sevivon5.png", megaTree));
+  sevivon.push_back(new Object("sprites/Sevivon6.png", megaTree));
+  sevivon.push_back(new Object("sprites/Sevivon7.png", megaTree));
+  sevivon.push_back(new Object("sprites/Sevivon8.png", megaTree));
+  int sevivonIdx = 0;
 
   Object menora("sprites/menora.png", megaTree);
 
@@ -421,6 +431,8 @@ int main(int argc, char *argv[])
     //}
 
 
+		sevivon[7-sevivonIdx]->draw();
+		sevivonIdx = (sevivonIdx+1)%8;
 		drawMenora(megaTree, menora, 1);
 
 
@@ -471,7 +483,7 @@ int main(int argc, char *argv[])
     frameCounter++;
     double sec = difftime(end, start);
     double fps = frameCounter/sec;
-    printf("FPS=%0.2f\n", fps);
+    //printf("FPS=%0.2f\n", fps);
   }
 
   /* close device (this not explicitly needed in most implementations) */
