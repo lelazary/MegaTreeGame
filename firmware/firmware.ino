@@ -34,7 +34,7 @@ void loop() {
     count = 0;
     for(int i=0; i<10 && count < size; i++)
     {
-	 n = Serial.readBytes((char*)(pixels+count), size-count);
+	n = Serial.readBytes((char*)(pixels+count), size-count);
 	count += n;
     }
 

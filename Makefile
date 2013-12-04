@@ -6,7 +6,7 @@ CC = g++ $(CFLAGS) $(VFLAGS) $(PMFLAGS) -g
 all: game serialClient
 
 game: game.cpp
-	$(CC) game.cpp -o game -lopencv_core -lopencv_highgui
+	$(CC) game.cpp -o game -lopencv_core -lopencv_highgui `sdl-config --cflags --libs` -lSDL_mixer
 serialClient: serialClient.cpp
 	$(CC) serialClient.cpp -o serialClient 
 

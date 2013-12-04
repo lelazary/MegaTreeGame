@@ -16,6 +16,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
+#include "SDL.h"
+#include "SDL_mixer.h"
 
 #ifdef _CH_
 #pragma package <opencv>
@@ -39,6 +41,83 @@ fd_set fds;
 cv::RNG rng;
 
 int stringMaps[12] = { 11, 12,7,8,9,10, 4, 6, 13, 5, 2, 3};
+
+class Music
+{
+
+public:
+
+  enum FXSOUND {DROP, GOOD_HIT, BAD_HIT, GRINCH_HIT};
+  Music() {
+    //For the music
+    int audio_rate = 22050;
+    Uint16 audio_format = AUDIO_S16; /* 16-bit stereo */
+    int audio_channels = 2;
+    int audio_buffers = 4096;
+    SDL_Init(SDL_INIT_AUDIO);
+    music = NULL;
+
+    if(Mix_OpenAudio(audio_rate, audio_format, audio_channels, audio_buffers)) {
+      printf("Unable to open audio!\n");
+      exit(1);
+    }
+
+    Mix_QuerySpec(&audio_rate, &audio_format, &audio_channels);
+
+    dropWav = Mix_LoadWAV("drop.wav");
+    goodHitWav = Mix_LoadWAV("goodHit.wav");
+    badHitWav = Mix_LoadWAV("badHit.wav");
+    grinchHouseHit = Mix_LoadWAV("grinchHouseHit.wav");
+
+    //Mix_HookMusicFinished(musicDone);
+  }
+
+  ~Music()
+  {
+    Mix_HaltMusic(); //Stop the music
+    if (music)
+      Mix_FreeMusic(music);
+
+    Mix_CloseAudio();
+    SDL_Quit();
+
+  }
+
+  void playBackground(const char* file)
+  {
+    Mix_HaltMusic(); //Stop the music
+    if (music)
+      Mix_FreeMusic(music);
+    /* Actually loads up the music */
+    music = Mix_LoadMUS(file);
+    Mix_PlayMusic(music, -1);
+  }
+
+  void playFX(FXSOUND fx)
+  {
+    Mix_HaltChannel(0); //Stop the drop sown
+    switch(fx)
+    {
+      case DROP: Mix_PlayChannel(0, dropWav, 0); break;
+      case GOOD_HIT: Mix_PlayChannel(0, goodHitWav, 0); break;
+      case BAD_HIT: Mix_PlayChannel(0, badHitWav, 0); break;
+      case GRINCH_HIT: Mix_PlayChannel(0, grinchHouseHit, 0); break;
+    }
+  }
+
+  void stopFX()
+  {
+    Mix_HaltChannel(0); //Stop the drop sown
+  }
+
+private:
+  Mix_Music *music;
+  Mix_Chunk *dropWav;
+  Mix_Chunk *goodHitWav;
+  Mix_Chunk *badHitWav;
+  Mix_Chunk *grinchHouseHit;
+
+};
 
 struct PixelString
 {
@@ -132,27 +211,19 @@ class MegaTree
       {
         if (img)
           strings[i].draw(img);
-    
+
         if (fd != -1)
         {
           int id = stringMaps[i];
           char buffer[1+1+(50*3)];
           buffer[0] = id;
           buffer[1] = 50;
-					if (i==0)
-					{
-						strings[i].getBuffer(buffer);
-						printf("Set string\n");
-						for(int i=0; i<(1+1+(50*3)); i++)
-							printf("%X ", buffer[i]);
-						printf("\n");
-					}
+          strings[i].getBuffer(buffer);
           write(fd, buffer, 1+1+(50*3));
           struct timeval timeout = {1, 0}; //10 seconds
           int ret = select(fd+1, &fds, NULL, NULL, &timeout);
           ret = read(fd, buffer, 10);
           buffer[ret] = 0;
-          //printf("%s\n", buffer);
           if (buffer[0] != 'A')
             printf("Error while sending string data (%s)\n", buffer);
         } else {
@@ -232,17 +303,21 @@ class Object
     {
       posX -= x;
       if (posX < limit2)
-			{
+      {
         posX = limit1;
-				return true;
-			}
+        return true;
+      }
 
       posY += y;
-			return false;
+      return false;
     }
 
     double getPosX(){ return posX; }
     double getPosY(){ return posY; }
+
+    cv::Rect getBB(){
+      return cvRect(posX, posY, itsSprite.cols-4, itsSprite.rows-4);
+    }
 
   private:
     MegaTree&  itsMegaTree;
@@ -252,54 +327,15 @@ class Object
 };
 
 
-void drawMenora(MegaTree& tree, Object& base, int numCandels)
+
+void setupSerial(const char* ttydev)
 {
-	base.setPos(0,30);
-	base.draw();
-
-  //Draw the samas
-	unsigned char flameR = rng.uniform(100,255);
-	unsigned char flameG = rng.uniform(50,150);
-	unsigned char flameB = rng.uniform(50,150);
-	unsigned char flameSize = rng.uniform(1,3);
-	for(int i=0; i<5; i++) //Candel base
-		tree.setPixel(10,25+i, CV_RGB(0, 0,255));
-	for(int i=0; i<flameSize; i++) //Candel flame
-		tree.setPixel(10,24-i, CV_RGB(flameR, flameG,0));
-
-  for(int c=0; c<numCandels; c++)
-	{
-		flameR = rng.uniform(100,255);
-		flameG = rng.uniform(50,150);
-		flameB = rng.uniform(50,150);
-		flameSize = rng.uniform(1,3);
-
-		for(int i=0; i<5; i++) //Candel base
-			tree.setPixel(c,28+i, CV_RGB(0, 0,255));
-		for(int i=0; i<flameSize; i++) //Candel flame
-			tree.setPixel(c,27-i, CV_RGB(flameR, flameG,0));
-	}
-}
-
-
-int main(int argc, char *argv[])
-{
-  char* ttydev = NULL;
-  char* filename = NULL;
-
-  if (argc > 0)
-    ttydev = argv[1]; 
-  if (argc > 1)
-    filename = argv[2]; 
-
   //Setup the serial
   fd = open(ttydev, O_RDWR | O_NOCTTY );
   if (fd <0) {
     printf("Error opening device %s\n", ttydev);
     perror(ttydev);
     fd = -1;
-		if (strcmp(ttydev, "null"))
-			return 1;
   }
   FD_ZERO(&fds);
   FD_SET(fd, &fds);
@@ -318,6 +354,137 @@ int main(int argc, char *argv[])
    */
   tcflush(fd, TCIFLUSH);
   tcsetattr(fd,TCSANOW,&newtio);
+}
+
+
+bool intersect(const cv::Rect& r1, const cv::Rect& r2)
+{
+
+  cv::Rect inter = r1 & r2;
+  if (inter.width > 0 && inter.height > 0)
+    return true;
+  else
+    return false;
+}
+
+class Display
+{
+public:
+  Display() {}
+  virtual int process(int key) = 0;
+};
+
+class HanukkaDisplay: public Display
+{
+public:
+  HanukkaDisplay(MegaTree& mt) : megaTree(mt) 
+  {
+    printf("Setup Hannukka\n");
+    sevivonIdx = 60;
+    sevivonVal = rng.uniform(0,4);
+    sevivonDisplayTime = 20;
+
+    sevivon.push_back(new Object("sprites/Sevivon1.png", megaTree));
+    sevivon.push_back(new Object("sprites/Sevivon2.png", megaTree));
+    sevivon.push_back(new Object("sprites/Sevivon3.png", megaTree));
+    sevivon.push_back(new Object("sprites/Sevivon4.png", megaTree));
+    sevivon.push_back(new Object("sprites/Sevivon5.png", megaTree));
+    sevivon.push_back(new Object("sprites/Sevivon6.png", megaTree));
+    sevivon.push_back(new Object("sprites/Sevivon7.png", megaTree));
+    sevivon.push_back(new Object("sprites/Sevivon8.png", megaTree));
+
+    menora = new Object("sprites/menora.png", megaTree);
+
+    banner = new Object("sprites/happyhanukkah.png", megaTree);
+  }
+
+  virtual int process(int key){ 
+    megaTree.setColor(CV_RGB(0,0,0));
+    if (sevivonDisplayTime > 0)
+    {
+    	if (sevivonIdx <= 0)
+    	{
+    		sevivon[1+(sevivonVal*2)]->draw();
+    		sevivonDisplayTime--;
+    	} else {
+    		//Spin sevivon
+    		sevivon[7-(sevivonIdx%8)]->draw();
+    		sevivonIdx--;
+    	}
+    } else {
+    	banner->draw();
+    	if (banner->move(2,0, 0, -150))
+    	{
+    		sevivonIdx = 50+rng.uniform(0,10);
+    		sevivonVal = rng.uniform(0,4);
+    		sevivonDisplayTime = 20;
+    	}
+    }
+    drawMenora(megaTree, *menora, 1);
+  }
+
+  void drawMenora(MegaTree& tree, Object& base, int numCandels)
+  {
+    base.setPos(0,30);
+    base.draw();
+
+    //Draw the samas
+    unsigned char flameR = rng.uniform(100,255);
+    unsigned char flameG = rng.uniform(50,150);
+    unsigned char flameB = rng.uniform(50,150);
+    unsigned char flameSize = rng.uniform(1,3);
+    for(int i=0; i<5; i++) //Candel base
+      tree.setPixel(10,25+i, CV_RGB(0, 0,255));
+    for(int i=0; i<flameSize; i++) //Candel flame
+      tree.setPixel(10,24-i, CV_RGB(flameR, flameG,0));
+
+    for(int c=0; c<numCandels; c++)
+    {
+      flameR = rng.uniform(100,255);
+      flameG = rng.uniform(50,150);
+      flameB = rng.uniform(50,150);
+      flameSize = rng.uniform(1,3);
+
+      for(int i=0; i<5; i++) //Candel base
+        tree.setPixel(c,28+i, CV_RGB(0, 0,255));
+      for(int i=0; i<flameSize; i++) //Candel flame
+        tree.setPixel(c,27-i, CV_RGB(flameR, flameG,0));
+    }
+  }
+
+private:
+  MegaTree& megaTree;
+  std::vector<Object*> sevivon;
+  Object *menora;
+  Object *banner;
+  int sevivonIdx;
+  int sevivonVal;
+  int sevivonDisplayTime;
+};
+
+
+int main(int argc, char *argv[])
+{
+  char* ttydev = NULL;
+  char* filename = NULL;
+  int mode  = 0;
+  
+  if (argc > 2)
+  {
+    mode = atoi(argv[1]);
+    ttydev = argv[2]; 
+    if (argc > 3)
+      filename = argv[3]; 
+  } else {
+    printf("Usage: %s mode [0=test, 1=hanukka display, 2=xmes game, 3=xmes normal] ttyDev houseImage.jpg\n", argv[0]);
+    exit(1);
+  }
+
+  setupSerial(ttydev);
+
+  Music music;
+  music.playBackground("music.mp3");
+
 
   MegaTree megaTree(cvPoint(555,355), cvPoint(0,295), 12);
   IplImage *image = NULL;
@@ -330,8 +497,15 @@ int main(int argc, char *argv[])
     cvMoveWindow("Test", 0, 0);
   }
 
-  Object santaSlay("sprites/grinchSlay.png", megaTree);
-  Object banner("sprites/happyhanukkah.png", megaTree);
+  Display* display;
+  switch (mode)
+  {
+     case 1:
+      display = new HanukkaDisplay(megaTree);
+      break;
+  }
+
+  Object santaSlay("sprites/santaSlay.png", megaTree);
 
   Object cannon1("sprites/cannon1.png", megaTree);
   cannon1.setPos(0,38);
@@ -352,6 +526,7 @@ int main(int argc, char *argv[])
   objects.push_back(new Object("sprites/snowman.png", megaTree));
   objects.push_back(new Object("sprites/treeSmall.png", megaTree));
   objects.push_back(new Object("sprites/treeSmall2.png", megaTree));
+  objects.push_back(new Object("sprites/grinchHouse.png", megaTree));
 
   Object santa("sprites/santa.png", megaTree);
   //objects.push_back(new Object("sprites/santa.png", megaTree));
@@ -360,39 +535,25 @@ int main(int argc, char *argv[])
   //objects.push_back(new Object("sprites/snowman.png", megaTree));
   //objects.push_back(new Object("sprites/grinch.png", megaTree));
 
-  std::vector<Object*> sevivon;
-  sevivon.push_back(new Object("sprites/Sevivon1.png", megaTree));
-  sevivon.push_back(new Object("sprites/Sevivon2.png", megaTree));
-  sevivon.push_back(new Object("sprites/Sevivon3.png", megaTree));
-  sevivon.push_back(new Object("sprites/Sevivon4.png", megaTree));
-  sevivon.push_back(new Object("sprites/Sevivon5.png", megaTree));
-  sevivon.push_back(new Object("sprites/Sevivon6.png", megaTree));
-  sevivon.push_back(new Object("sprites/Sevivon7.png", megaTree));
-  sevivon.push_back(new Object("sprites/Sevivon8.png", megaTree));
-
-  Object menora("sprites/menora.png", megaTree);
 
   int currentObject = 0;
   int y = rng.uniform(20,35);
   objects[currentObject]->setPos(12, y);
 
   Object* present = NULL;
-  double presentSpeed = 1.0/5;
-  double objectSpeed = 0.5/5;
-  double santaSpeed = 2.0/5;
+  double presentSpeed = 2.0/2;
+  double objectSpeed = 0.5/2;
+  double santaSpeed = 3.0/2;
   int idx = 0;
   int drawBit = 0;
 
- // start and end times
+  // start and end times
   time_t start, end;
   int frameCounter = 0;
 
   bool fireHeart = 0;
   time(&start);
 
-	int sevivonIdx = 10;
-	int sevivonVal = rng.uniform(0,4);
-  int sevivonDisplayTime = 20;
   while(1)
   {
     IplImage *tmpImg  = NULL;
@@ -412,112 +573,104 @@ int main(int argc, char *argv[])
       cvReleaseImage(&tmpImg);
     }
 
+    display->process(key);
 
-    megaTree.setImage(background);
-    //megaTree.setColor(CV_RGB(0,0,0));
+    //megaTree.setImage(background);
+    ////megaTree.setColor(CV_RGB(0,0,0));
 
-		//megaTree.setColor(atoi(argv[3]),CV_RGB(atoi(argv[4]), atoi(argv[5]), atoi(argv[6])));
+    ////megaTree.setColor(atoi(argv[3]),CV_RGB(atoi(argv[4]), atoi(argv[5]), atoi(argv[6])));
 
-    if (key != -1)
-    {
-      switch (key)
-      {
-        case 49:
-          if (present == NULL)
-          {
-            if (santaSlay.getPosX() < 5 && santaSlay.getPosX() > -15)
-            { 
-              present = presents[0];
-              present->setPos(3, 5);
-            }
-        
-            
-          }
-          break;
-        case 50:
-          break;
-      }
-      //cannon2.draw();
-      //fireHeart = 1;
-      //heart.setPos(0,30);
-      
-    } else {
-        //  cannon1.draw();
+    //if (key != -1)
+    //{
+    //  switch (key)
+    //  {
+    //    case 49:
+    //      if (present == NULL)
+    //      {
+    //        if (santaSlay.getPosX() < -5 && santaSlay.getPosX() > -20)
+    //        { 
+    //          music.playFX(Music::DROP);
+    //          present = presents[0];
+    //          present->setPos(3, 5);
+    //        }
 
-    }
 
-		////if (sevivonDisplayTime > 0)
-		////{
-		////	if (sevivonIdx <= 0)
-		////	{
-		////		sevivon[1+(sevivonVal*2)]->draw();
-		////		sevivonDisplayTime--;
-		////	} else {
-		////		//Spin sevivon
-		////		sevivon[7-(sevivonIdx%8)]->draw();
-		////		sevivonIdx--;
-		////	}
-		////} else {
-		////	banner.draw();
-		////	if (banner.move(2,0, 0, -150))
-		////	{
-		////		sevivonIdx = 20+rng.uniform(0,5);
-		////		sevivonVal = rng.uniform(0,4);
-		////		sevivonDisplayTime = 20;
-		////	}
-		////}
-		////drawMenora(megaTree, menora, 1);
-    //    
+    //      }
+    //      break;
+    //    case 50:
+    //      break;
+    //  }
+    //  //cannon2.draw();
+    //  //fireHeart = 1;
+    //  //heart.setPos(0,30);
 
-    ////idx++;
-    ////if (idx > 60)
-    ////{
-    ////  idx = 0;
-    ////  currentObject = rng.uniform(0,objects.size()); 
-    ////}
-    ////objects[currentObject]->draw();
+    //} else {
+    //  //  cannon1.draw();
 
-    ////santa.draw();
+    //}
 
-    ////if (fireHeart)
-    ////{
-    ////    heart.draw();
-    ////    heart.move(0,-2);
-    ////    if (heart.getPosY() < 10)
-    ////      fireHeart = 0;
-    ////}
 
-    santaSlay.move(santaSpeed, 0);
-    santaSlay.draw();
+    //////idx++;
+    //////if (idx > 60)
+    //////{
+    //////  idx = 0;
+    //////  currentObject = rng.uniform(0,objects.size()); 
+    //////}
+    //////objects[currentObject]->draw();
 
-    if (present != NULL)
-    {
-    	present->move(0, presentSpeed);
-    	present->draw();
-    	if (present->getPosY() > 39)
-    		present = NULL;
-			else
-			{
-				if (present->getPosX() - 5 > (objects[currentObject]->getPosX()+6) &&
-						present->getPosX() + 5 < (objects[currentObject]->getPosX()+6))
-					printf("Hit\n");
+    //////santa.draw();
 
-				printf("%f,%f %f,%f\n", present->getPosX(), present->getPosY(), 
-						objects[currentObject]->getPosX()+6, objects[currentObject]->getPosY());
-			}
-    }
+    //////if (fireHeart)
+    //////{
+    //////    heart.draw();
+    //////    heart.move(0,-2);
+    //////    if (heart.getPosY() < 10)
+    //////      fireHeart = 0;
+    //////}
 
-    objects[currentObject]->move(objectSpeed, 0);
-    objects[currentObject]->draw();
-    if (objects[currentObject]->getPosX() < -23)
-    {
-    	currentObject = rng.uniform(0,objects.size()); //Check if inclusive
-    	printf("Object %i\n", currentObject);
-    	int y = rng.uniform(20,35);
-    	objects[currentObject]->setPos(12, y);
-    }
+    //santaSlay.move(santaSpeed, 0);
+    //santaSlay.draw();
 
-    megaTree.drawSnow(CV_RGB(255,255,255));
+    //if (present != NULL)
+    //{
+    //  present->move(0, presentSpeed);
+    //  present->draw();
+    //  if (present->getPosY() > 39)
+    //    present = NULL;
+    //  else
+    //  {
+    //    if (intersect(present->getBB(), objects[currentObject]->getBB()))
+    //    {
+    //      present = NULL;
+    //      if (currentObject == 5)
+    //      {
+    //        music.playFX(Music::GRINCH_HIT);
+    //        music.playBackground("grinch.mp3");
+    //      } else {
+    //        if (currentObject == 3 ||
+    //            currentObject == 4)
+    //        {
+    //          music.playFX(Music::BAD_HIT);
+    //        } else {
+    //          music.playFX(Music::GOOD_HIT);
+    //        }
+    //      }
+
+    //    }
+
+    //  }
+    //}
+
+    //objects[currentObject]->move(objectSpeed, 0);
+    //objects[currentObject]->draw();
+    //if (objects[currentObject]->getPosX() < -23)
+    //{
+    //  currentObject = rng.uniform(0,objects.size()); //Check if inclusive
+    //  int y = rng.uniform(20,35);
+    //  objects[currentObject]->setPos(12, y);
+    //}
+
+    //megaTree.drawSnow(CV_RGB(255,255,255));
 
 
     time(&end);
@@ -526,11 +679,6 @@ int main(int argc, char *argv[])
     double fps = frameCounter/sec;
     //printf("FPS=%0.2f\n", fps);
   }
-
-  /* close device (this not explicitly needed in most implementations) */
-
-  /* restore the old port settings */
-  tcsetattr(fd,TCSANOW,&oldtio);
 
   close(fd);
 
