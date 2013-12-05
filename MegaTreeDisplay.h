@@ -56,7 +56,7 @@ class Music
 
 public:
 
-  enum FXSOUND {DROP, GOOD_HIT, BAD_HIT, GRINCH_HIT};
+  enum FXSOUND {DROP, GOOD_HIT, BAD_HIT, GRINCH_HIT, LASER};
   Music() {
     //For the music
     int audio_rate = 22050;
@@ -73,10 +73,11 @@ public:
 
     Mix_QuerySpec(&audio_rate, &audio_format, &audio_channels);
 
-    dropWav = Mix_LoadWAV("drop.wav");
-    goodHitWav = Mix_LoadWAV("goodHit.wav");
-    badHitWav = Mix_LoadWAV("badHit.wav");
-    grinchHouseHit = Mix_LoadWAV("grinchHouseHit.wav");
+    dropWav = Mix_LoadWAV("music/drop.wav");
+    goodHitWav = Mix_LoadWAV("music/goodHit.wav");
+    badHitWav = Mix_LoadWAV("music/badHit.wav");
+    grinchHouseHit = Mix_LoadWAV("music/grinchHouseHit.wav");
+    laserWav = Mix_LoadWAV("music/laser.wav");
 
     //Mix_HookMusicFinished(musicDone);
   }
@@ -99,7 +100,7 @@ public:
       Mix_FreeMusic(music);
     /* Actually loads up the music */
     music = Mix_LoadMUS(file);
-    Mix_PlayMusic(music, -1);
+    Mix_PlayMusic(music, 0);
   }
 
   void playFX(FXSOUND fx)
@@ -111,6 +112,7 @@ public:
       case GOOD_HIT: Mix_PlayChannel(0, goodHitWav, 0); break;
       case BAD_HIT: Mix_PlayChannel(0, badHitWav, 0); break;
       case GRINCH_HIT: Mix_PlayChannel(0, grinchHouseHit, 0); break;
+      case LASER: Mix_PlayChannel(0, laserWav, 0); break;
     }
   }
 
@@ -125,6 +127,7 @@ private:
   Mix_Chunk *goodHitWav;
   Mix_Chunk *badHitWav;
   Mix_Chunk *grinchHouseHit;
+  Mix_Chunk *laserWav;
 
 };
 
