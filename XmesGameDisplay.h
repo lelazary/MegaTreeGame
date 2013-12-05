@@ -53,17 +53,26 @@ public:
     gameState = 1;
 
     music.playBackground("music/deck.mp3");
+    gameTime = 0;
 
   }
 
   virtual int process(int key){ 
+    key = (rng.uniform(0,100) < 15) ? 49 : -1; //Play randomly
+    
+    gameTime++;
     switch(gameState)
     {
        case 1: 
         if (gameMode1(key))
+	{
+	  gameTime = 0;
           gameState = 2;
+	}
         break;
        case 2: 
+	if (gameTime > 100)
+	 gameState = 1;
         gameMode2(key);
         break;
     }
@@ -234,6 +243,7 @@ private:
   int drawBit;
   int fireHeart;
   int gameState;
+  int gameTime;
 
 
 };

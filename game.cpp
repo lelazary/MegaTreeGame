@@ -1,4 +1,3 @@
-
 #include "stdlib.h"
 #include "stdio.h"
 #include "string.h"
@@ -34,16 +33,6 @@
 #include "SetupDisplay.h"
 #include "MegaTreeDisplay.h"
 #include "XmesGameDisplay.h"
-
-/* baudrate settings are defined in <asm/termbits.h>, which is
-   included by <termios.h> */
-#define BAUDRATE B230400
-
-//D6 D7 D2 D3 C6 C7 B7 D1 B4 D0 B2 B3
-
-int fd=-1;
-fd_set fds;
-cv::RNG rng;
 
 int main(int argc, char *argv[])
 {
@@ -130,8 +119,6 @@ int main(int argc, char *argv[])
     double fps = frameCounter/sec;
     //printf("FPS=%0.2f\n", fps);
   }
-
-  close(fd);
 
   if (image)
   {
