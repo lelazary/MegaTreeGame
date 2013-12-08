@@ -44,9 +44,9 @@ public:
     objects[currentObject]->setPos(12, y);
 
     present = NULL;
-    presentSpeed = 2.0/2;
-    objectSpeed = 0.5/2;
-    santaSpeed = 3.0/2;
+    presentSpeed = 2.0/5;
+    objectSpeed = 0.5/5;
+    santaSpeed = 3.0/5;
     idx = 0;
     drawBit = 0;
     fireHeart = 0;
