@@ -39,10 +39,13 @@
 
 /* baudrate settings are defined in <asm/termbits.h>, which is
    included by <termios.h> */
-#define BAUDRATE B230400
+#define BAUDRATE B115200
 
 //Map the io ports to the actual string on the display
-const int stringMaps[12] = { 11, 12,7,8,9,10, 4, 6, 13, 5, 2, 3};
+//const int stringMaps[12] = { 8, 5, 4, 3, 7, 6, 2,   14 , 13,  15  , 11, 12};
+//const int stringMaps[12] = { 8, 5, 3, 7, 6, 4, 15, 14, 11, 2, 12, 13};
+const int stringMaps[12] = { 8, 5, 6, 4, 3, 7, 15, 14, 12, 2, 13, 11};
+
 
 class Display
 {
@@ -193,9 +196,9 @@ struct PixelString
   void getBuffer(char* buffer) {
     for(int i=0; i<50; i++)
     {
-      buffer[2+(i*3)+0] = colors[(i)*3+0].val[0];
-      buffer[2+(i*3)+1] = colors[(i)*3+1].val[2];
-      buffer[2+(i*3)+2] = colors[(i)*3+2].val[1];
+      buffer[(i*3)+0] = colors[(50-i)*3+0].val[0];
+      buffer[(i*3)+1] = colors[(50-i)*3+1].val[2];
+      buffer[(i*3)+2] = colors[(50-i)*3+2].val[1];
     }
   }
 
@@ -228,14 +231,17 @@ class MegaTree
 
         if (fd != -1)
         {
-          int id = stringMaps[i];
           char buffer[1+1+(50*3)];
+          int ret = read(fd, buffer, 100);
+					buffer[ret] = 0;
+          int id = stringMaps[i];
           buffer[0] = id;
           buffer[1] = 50;
+          ret = write(fd, buffer, 2);
           strings[i].getBuffer(buffer);
-          write(fd, buffer, 1+1+(50*3));
-          struct timeval timeout = {1, 0}; //10 seconds
-          int ret = select(fd+1, &fds, NULL, NULL, &timeout);
+          ret = write(fd, buffer, 50*3);
+          struct timeval timeout = {10, 0}; //10 seconds
+          ret = select(fd+1, &fds, NULL, NULL, &timeout);
           ret = read(fd, buffer, 10);
           buffer[ret] = 0;
           if (buffer[0] != 'A')

@@ -19,10 +19,12 @@ public:
 
   virtual int process(int key){ 
     megaTree.setColor(CV_RGB(0,0,0));
-    printf("SetColor %i %i\n", stringId, red);
-    megaTree.setPixel(stringId,idx,CV_RGB(red, green, blue));
-    idx++;
-    if (idx > 50) idx = 0;
+
+    printf("SetColor %i %i (%i,%i,%i)\n", stringId, idx, red, green , blue);
+    //megaTree.setColor(stringId,CV_RGB(red, green, blue));
+    megaTree.setPixel(stringId ,idx,CV_RGB(red, green, blue));
+    idx--;
+    if (idx < 0) idx = 49;
   }
 
 private:
