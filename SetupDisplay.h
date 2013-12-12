@@ -14,12 +14,15 @@ public:
     blue(b)
   {
     printf("Setup Display\n");
+    idx = 0;
   }
 
   virtual int process(int key){ 
     megaTree.setColor(CV_RGB(0,0,0));
     printf("SetColor %i %i\n", stringId, red);
-    megaTree.setColor(stringId,CV_RGB(red, green, blue));
+    megaTree.setPixel(stringId,idx,CV_RGB(red, green, blue));
+    idx++;
+    if (idx > 50) idx = 0;
   }
 
 private:
@@ -28,6 +31,7 @@ private:
   unsigned char red;
   unsigned char green;
   unsigned char blue;
+  int idx;
 
 };
 

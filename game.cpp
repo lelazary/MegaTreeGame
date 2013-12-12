@@ -39,7 +39,10 @@ int main(int argc, char *argv[])
   char* ttydev = NULL;
   char* filename = NULL;
   int mode  = 0;
-  
+ 
+	int interfaceFD = open("/tmp/interface", O_RDONLY | O_NDELAY | O_NONBLOCK); 
+  printf("Fd %i\n", interfaceFD);
+
   if (argc > 2)
   {
     mode = atoi(argv[1]);
@@ -102,6 +105,7 @@ int main(int argc, char *argv[])
     //Draw the objects
     megaTree.draw(tmpImg);
 
+
     int key = -1;
     if (image)
     {
@@ -110,6 +114,16 @@ int main(int argc, char *argv[])
       cvReleaseImage(&tmpImg);
     }
 
+    if (interfaceFD != -1)
+    {
+	    char cmd;
+	    int n = read(interfaceFD, &cmd, 1);
+      if (n > 0)
+				key = cmd;
+    }
+
+		if (key != -1)
+			printf("In Key %i\n", key);
     if (display)
       display->process(key);
 

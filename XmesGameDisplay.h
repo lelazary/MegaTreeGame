@@ -58,7 +58,7 @@ public:
   }
 
   virtual int process(int key){ 
-    key = (rng.uniform(0,100) < 15) ? 49 : -1; //Play randomly
+    //key = (rng.uniform(0,100) < 15) ? 49 : -1; //Play randomly
     
     gameTime++;
     switch(gameState)
@@ -71,8 +71,11 @@ public:
 	}
         break;
        case 2: 
-	if (gameTime > 100)
+	if (gameTime > 300)
+        {
+	 music.playBackground("music/deck.mp3");
 	 gameState = 1;
+        }
         gameMode2(key);
         break;
     }
@@ -84,9 +87,10 @@ public:
 
     if (key != -1)
     {
+      printf("Key %i %i\n", key, 'f');
       switch (key)
       {
-        case 49:
+        case 'f':
           if (present == NULL)
           {
             if (santaSlay->getPosX() < -5 && santaSlay->getPosX() > -20)
@@ -187,7 +191,7 @@ public:
     {
       switch (key)
       {
-        case 49:
+        case 'f':
           music.playFX(Music::LASER);
           cannon2->draw();
           fireHeart = 1;

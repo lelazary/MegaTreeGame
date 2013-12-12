@@ -27,10 +27,14 @@ void loop() {
   if (Serial.available() > 0)
   {
     int count = Serial.readBytes((char*)header, 2);
-    if (count != 2) return;
+    if (count != 2)
+    {
+	Serial.print("N");
+	return;
+    }
     //Header contains the string id and the size of pixels to set
-    uint16_t size = header[1]*3; //RGB per pixel
     strip.setPin(header[0]);
+    uint16_t size = header[1]*3; //RGB per pixel
     count = 0;
     for(int i=0; i<10 && count < size; i++)
     {
