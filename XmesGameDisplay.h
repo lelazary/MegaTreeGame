@@ -33,6 +33,7 @@ public:
     objects.push_back(new Object("sprites/grinchHouse.png", megaTree));
 
     santa = new Object("sprites/santa.png", megaTree);
+    grinch = new Object("sprites/grinch.png", megaTree);
     //objects.push_back(new Object("sprites/santa.png", megaTree));
     //objects.push_back(new Object("sprites/santaFace.png", megaTree));
     //objects.push_back(new Object("sprites/tree.png", megaTree));
@@ -50,7 +51,7 @@ public:
     idx = 0;
     drawBit = 0;
     fireHeart = 0;
-    gameState = 1;
+    gameState = 0;
 
     music.playBackground("music/deck.mp3");
     gameTime = 0;
@@ -61,8 +62,17 @@ public:
     //key = (rng.uniform(0,100) < 15) ? 49 : -1; //Play randomly
     
     gameTime++;
+    printf("%i %i\n", gameTime, gameState);
     switch(gameState)
     {
+       case 0:
+    	santa->draw();
+	if (gameTime > 25)
+	{
+	 gameState = 1;
+	 gameTime = 0;
+	}
+	break;
        case 1: 
         if (gameMode1(key))
 	{
@@ -70,11 +80,20 @@ public:
           gameState = 2;
 	}
         break;
-       case 2: 
+       case 2:
+    	grinch->draw();
+	if (gameTime > 25)
+	{
+	 gameState = 3;
+	 gameTime = 0;
+	}
+	break;
+       case 3: 
 	if (gameTime > 300)
         {
 	 music.playBackground("music/deck.mp3");
-	 gameState = 1;
+	 gameState = 0;
+	 gameTime = 0;
         }
         gameMode2(key);
         break;
@@ -87,7 +106,6 @@ public:
 
     if (key != -1)
     {
-      printf("Key %i %i\n", key, 'f');
       switch (key)
       {
         case 'f':
@@ -236,6 +254,7 @@ private:
   cv::Mat background;
   std::vector<Object*> objects;
   Object* santa;
+  Object* grinch;
 
   Object* present;
   double presentSpeed;
