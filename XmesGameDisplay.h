@@ -6,7 +6,7 @@
 class XmesGameDisplay: public Display
 {
 public:
-  XmesGameDisplay(MegaTree& mt) : megaTree(mt)
+  XmesGameDisplay(MegaTree& mt) : megaTree(mt), rng(time(0))
   {
     printf("XMes Game Display\n");
 
@@ -45,13 +45,14 @@ public:
     objects[currentObject]->setPos(12, y);
 
     present = NULL;
-    presentSpeed = 2.0/5;
-    objectSpeed = 0.5/5;
-    santaSpeed = 3.0/5;
+    presentSpeed = 2.0/3;
+    objectSpeed = 0.5/3;
+    santaSpeed = 3.0/3;
     idx = 0;
     drawBit = 0;
     fireHeart = 0;
     gameState = 0;
+    level = 0;
 
     music.playBackground("music/deck.mp3");
     gameTime = 0;
@@ -59,13 +60,13 @@ public:
   }
 
   virtual int process(int key){ 
-    //key = (rng.uniform(0,100) < 15) ? 49 : -1; //Play randomly
+    key = (rng.uniform(0,100) < 15) ? 'f' : -1; //Play randomly
     
     gameTime++;
-    printf("%i %i\n", gameTime, gameState);
     switch(gameState)
     {
        case 0:
+	megaTree.setImage(background);
     	santa->draw();
 	if (gameTime > 25)
 	{
@@ -81,6 +82,7 @@ public:
 	}
         break;
        case 2:
+	megaTree.setImage(background);
     	grinch->draw();
 	if (gameTime > 25)
 	{
@@ -94,6 +96,16 @@ public:
 	 music.playBackground("music/deck.mp3");
 	 gameState = 0;
 	 gameTime = 0;
+
+	 level += 0.5;
+
+	 presentSpeed = 2.0/(4-level);
+	 objectSpeed = 0.5/(4-level);
+	 santaSpeed = 3.0/(4-level);
+	 if (level > 3)
+	   exit(0);
+	 printf("Level %f\n", level);
+
         }
         gameMode2(key);
         break;
@@ -123,34 +135,9 @@ public:
         case 50:
           break;
       }
-      //cannon2.draw();
-      //fireHeart = 1;
-      //heart.setPos(0,30);
-
     } else {
-      //  cannon1.draw();
-
     }
 
-
-    //Random Display
-    //////idx++;
-    //////if (idx > 60)
-    //////{
-    //////  idx = 0;
-    //////  currentObject = rng.uniform(0,objects.size()); 
-    //////}
-    //////objects[currentObject]->draw();
-
-    //////santa.draw();
-
-    //////if (fireHeart)
-    //////{
-    //////    heart.draw();
-    //////    heart.move(0,-2);
-    //////    if (heart.getPosY() < 10)
-    //////      fireHeart = 0;
-    //////}
 
     santaSlay->move(santaSpeed, 0);
     santaSlay->draw();
@@ -267,6 +254,7 @@ private:
   int fireHeart;
   int gameState;
   int gameTime;
+  double level;
 
 
 };
