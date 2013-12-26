@@ -34,6 +34,7 @@
 #include "MegaTreeDisplay.h"
 #include "XmesGameDisplay.h"
 #include "RandomDisplay.h"
+#include "NewYearDisplay.h"
 
 int main(int argc, char *argv[])
 {
@@ -51,7 +52,7 @@ int main(int argc, char *argv[])
     if (argc > 3)
       filename = argv[3]; 
   } else {
-    printf("Usage: %s mode [0=test, 1=hanukka display, 2=xmes game, 3=random display] ttyDev houseImage.jpg\n", argv[0]);
+    printf("Usage: %s mode [0=test, 1=hanukka display, 2=xmes game, 3=random display 4=newYear Display] ttyDev houseImage.jpg\n", argv[0]);
     exit(1);
   }
 
@@ -88,6 +89,9 @@ int main(int argc, char *argv[])
       break;
      case 3:
       display = new RandomDisplay(megaTree);
+      break;
+     case 4:
+      display = new NewYearDisplay(megaTree);
       break;
   }
 
