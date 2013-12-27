@@ -37,7 +37,10 @@ public:
 			case 2:
 			case 3:
 				if (fireWorks())
+				{
+					snowflakePosY = 0;
 					displayState++;
+				}
 				break;
 			case 4:
 				if (drawSnowflakes())
