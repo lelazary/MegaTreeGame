@@ -12,7 +12,7 @@ public:
     fireWorksState = 0;
 		fireWorksStart = 0;
 		fireWorksColor = CV_RGB(255,0,0);
-		displayState = 4;
+		displayState = 1;
 		snowflakePosX = 0;
 		snowflakePosY = 0;
     printf("Setup NewYear\n");
@@ -87,6 +87,7 @@ public:
 					float a = 6;
 					float b = 10;
 					int r = fireWorksPos++;
+					if (r<0) r = 0;
 					if (fireWorksPos > 8)
 					{
 						fireWorksPos = 50;
@@ -112,7 +113,7 @@ public:
 							25+rng.uniform(0,100)*2, 
 							25+rng.uniform(0,100)*2); 
 
-					for(int i=0; i<360; i++)
+					for(int i=0; i<360; i += 3+rng.uniform(5,10))
 					{
 						int x = a + r * cos(float(i)*180/M_PI);
 						int y = b + r * sin(float(i)*180/M_PI);
