@@ -2,30 +2,55 @@
 #define NewYearDisplay_H
 
 #include "MegaTreeDisplay.h"
+#include <list>
+
+struct Line
+{
+	int x;
+	int y;
+	int length;
+	int dir;
+	cv::Scalar color;
+
+	Line(int _x, int _y, int _l, int _d, cv::Scalar _c) :
+		x(_x), y(_y), length(_l), dir(_d), color(_c)
+	{}
+};
 
 class NewYearDisplay: public Display
 {
 public:
   NewYearDisplay(MegaTree& mt) : megaTree(mt)
   {
+    printf("Setup NewYear\n");
+
     fireWorksPos = 49;
     fireWorksState = 0;
 		fireWorksStart = 0;
 		fireWorksColor = CV_RGB(255,0,0);
-		displayState = 1;
+		displayState = 0;
 		snowflakePosX = 0;
 		snowflakePosY = 0;
-    printf("Setup NewYear\n");
+		numFrames = 0;
+
+		algDisplayCnt = 12;
+		algDisplayDir = rng.uniform(-3,3);
+		if (algDisplayDir == 0) algDisplayDir = 1;
+		algDisplayLength = rng.uniform(1,10);
+		algDisplayNewRndColor = rng.uniform(0,2);
+		algDisplayLoopIdx = rng.uniform(0,2);
+
 
 		banner = new Object("sprites/happynewyear.png", megaTree);
 		snowflake = new Object("sprites/snowflake.png", megaTree);
-		
+
   }
 
   virtual int process(int key){ 
 		megaTree.setColor(CV_RGB(0,0,0));
-	
+		
 
+	
 		switch(displayState)
 		{
 			case 0:
@@ -44,13 +69,80 @@ public:
 				break;
 			case 4:
 				if (drawSnowflakes())
+					displayState++;
+				break;
+			case 5:
+				numFrames++;
+				if (!(numFrames%50))
+				{
+					algDisplayCnt = 12;
+					algDisplayDir = rng.uniform(-3,3);
+					if (algDisplayDir == 0) algDisplayDir = 1;
+					algDisplayLength = rng.uniform(1,10);
+					algDisplayNewRndColor = rng.uniform(0,2);
+					algDisplayLoopIdx = rng.uniform(0,2);
+				}
+
+				treeAlgDisplay(algDisplayCnt, algDisplayDir, algDisplayLength,
+							algDisplayNewRndColor, algDisplayLoopIdx);
+				if (numFrames > 500)
+				{
+					numFrames = 0;
 					displayState=0;
+				}
 				break;
 		}
 
 	}
 
+	int treeAlgDisplay(int cnt, int dir, int length, int newRndColor, int loopIdx)
+	{
 
+
+		int start = (dir > 0) ? 0 : 40;
+		cv::Scalar color = CV_RGB(
+				25+rng.uniform(0,100)*2, 
+				25+rng.uniform(0,100)*2, 
+				25+rng.uniform(0,100)*2); 
+    linePos = (linePos+1)%24;
+
+		for(int i=0; i<cnt; i++)
+		{
+			if (newRndColor)
+				color = CV_RGB(
+						25+rng.uniform(0,100)*2, 
+						25+rng.uniform(0,100)*2, 
+						25+rng.uniform(0,100)*2); 
+
+			int idx = i;
+			if (loopIdx)
+				idx = abs(-12 + linePos);
+			lines.push_back(Line(idx,start,length,length*dir,color));
+		}
+
+		displayLines();
+
+		return 0;
+	}
+
+
+  int displayLines()
+	{
+		for(std::list<Line>::iterator it=lines.begin(); it != lines.end();)
+		{
+			if (it->y > -1 && it->y < 50)
+			{
+				for(int i=0; i<it->length; i++)
+					megaTree.setPixel(it->x,it->y+i, it->color);
+				it->y += it->dir;
+				++it;
+			} else {
+				it = lines.erase(it);
+			}
+				
+		}
+		return 0;
+	}
 	int drawSnowflakes()
 	{
 		snowflakePosY++;
@@ -149,6 +241,17 @@ Object *banner;
 Object *snowflake;
 int snowflakePosX;
 int snowflakePosY;
+int numFrames;
+int linePos;
+std::list<Line> lines;
+
+int algDisplayCnt;
+int algDisplayDir;
+int algDisplayLength;
+int algDisplayNewRndColor;
+int algDisplayLoopIdx;
+
+
 };
 
 #endif
